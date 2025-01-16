@@ -4,14 +4,13 @@ import {
   Menu,
   MenuItemConstructorOptions,
 } from 'electron';
-import { IpcEvents } from '../ipc-events';
-import { isDevMode } from '../utils/devmode';
+
 import { ipcMainManager } from './ipc';
+import { isDevMode } from './utils/devmode';
+import { IpcEvents } from '../ipc-events';
 
 /**
  * Returns items related to running the current fiddle.
- *
- * @returns {Array<MenuItemConstructorOptions>}
  */
 export function getRunItems(): Array<MenuItemConstructorOptions> {
   return [
@@ -35,9 +34,6 @@ export function getRunItems(): Array<MenuItemConstructorOptions> {
  * Possibly returns items interacting with the Monaco editor.
  * Our check for "are we in the Monaco editor" is pretty crude -
  * we just assume that we are if we can paste text.
- *
- * @param {ContextMenuParams} { pageURL, editFlags }
- * @returns {Array<MenuItemConstructorOptions>}
  */
 export function getMonacoItems({
   pageURL,
@@ -104,10 +100,6 @@ export function getMonacoItems({
 
 /**
  * Possibly returns the `Inspect Element` item.
- *
- * @param {BrowserWindow} browserWindow
- * @param {ContextMenuParams} { x, y }
- * @returns {Array<MenuItemConstructorOptions>}
  */
 export function getInspectItems(
   browserWindow: BrowserWindow,
@@ -136,8 +128,6 @@ export function getInspectItems(
 
 /**
  * Creates a context menu for a given BrowserWindow
- *
- * @param {BrowserWindow} browserWindow
  */
 export function createContextMenu(browserWindow: BrowserWindow) {
   browserWindow.webContents.on('context-menu', (_event, props) => {

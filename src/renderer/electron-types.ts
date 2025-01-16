@@ -1,11 +1,7 @@
 import * as MonacoType from 'monaco-editor';
-import * as fs from 'fs-extra';
-import * as path from 'path';
-import watch from 'node-watch';
 
-import { RunnableVersion, VersionSource } from '../interfaces';
-
-const ELECTRON_DTS = 'electron.d.ts';
+import { ELECTRON_DTS } from '../constants';
+import { NodeTypes, RunnableVersion, VersionSource } from '../interfaces';
 
 /**
  * Keeps monaco informed of the current Electron version's .d.ts
@@ -15,89 +11,84 @@ const ELECTRON_DTS = 'electron.d.ts';
  * - if it's a remote version, fetch() the .d.ts and cache it locally
  */
 export class ElectronTypes {
-  private disposable: MonacoType.IDisposable | undefined;
-  private watcher: fs.FSWatcher | undefined;
+  private disposables: MonacoType.IDisposable[] = [];
+  private electronTypesDisposable: MonacoType.IDisposable | undefined;
 
-  constructor(
-    private readonly monaco: typeof MonacoType,
-    private readonly cacheDir: string,
-  ) {}
+  constructor(private readonly monaco: typeof MonacoType) {
+    window.ElectronFiddle.addEventListener(
+      'electron-types-changed',
+      (types, version) => {
+        // Dispose of any previous Electron types so there's only ever one
+        this.electronTypesDisposable?.dispose();
+        this.electronTypesDisposable = undefined;
+
+        this.setElectronTypes(types, version);
+      },
+    );
+  }
 
   public async setVersion(ver?: RunnableVersion): Promise<void> {
     this.clear();
 
     if (!ver) return;
-    const { localPath: dir, source, version } = ver;
 
-    if (dir) {
-      const file = path.join(dir, 'gen/electron/tsc/typings', ELECTRON_DTS);
-      this.setTypesFromFile(file, ver);
-      try {
-        this.watcher = watch(file, () => this.setTypesFromFile(file, ver));
-      } catch (err) {
-        console.debug(`Unable to watch "${file}" for changes: ${err}`);
-      }
-    }
+    this.setElectronTypes(
+      // Destructure ver so it's not a Proxy object, which can't be used
+      await window.ElectronFiddle.getElectronTypes({ ...ver }),
+      ver.version,
+    );
+    await this.setNodeTypes(ver.version);
+  }
 
-    if (source === VersionSource.remote) {
-      const file = this.getCacheFile(ver);
-      await ElectronTypes.ensureVersionIsCachedAt(version, file);
-      this.setTypesFromFile(file, ver);
+  private setElectronTypes(types: string | undefined, version: string): void {
+    if (types) {
+      console.log(`Updating Monaco with "${ELECTRON_DTS}@${version}"`);
+      this.electronTypesDisposable =
+        this.monaco.languages.typescript.javascriptDefaults.addExtraLib(types);
+    } else {
+      console.log(`No types found for "${ELECTRON_DTS}@${version}"`);
     }
   }
 
-  public uncache(ver: RunnableVersion) {
-    if (ver.source === VersionSource.remote)
-      fs.removeSync(this.getCacheFile(ver));
-  }
-
-  private setTypesFromFile(file: string, ver: RunnableVersion) {
-    this.dispose();
-    try {
-      console.log(`Updating Monaco with "${ELECTRON_DTS}@${ver.version}"`);
-      this.disposable = this.monaco.languages.typescript.javascriptDefaults.addExtraLib(
-        fs.readFileSync(file, 'utf8'),
+  private async setNodeTypes(ver: string): Promise<void> {
+    const nodeTypes = await window.ElectronFiddle.getNodeTypes(ver);
+    if (nodeTypes) {
+      console.log(
+        `Updating Monaco with files for Node.js ${nodeTypes.version}:`,
+        Object.keys(nodeTypes.types),
       );
-    } catch (err) {
-      console.debug(`Unable to read types from "${file}": ${err.message}`);
+
+      for (const file of Object.keys(nodeTypes.types)) {
+        const lib =
+          this.monaco.languages.typescript.javascriptDefaults.addExtraLib(
+            nodeTypes.types[file as keyof NodeTypes],
+          );
+        this.disposables.push(lib);
+      }
+    } else {
+      console.log(`No Node.js types found for Electron ${ver}`);
     }
   }
 
-  private getCacheFile(ver: RunnableVersion) {
-    return path.join(this.cacheDir, ver.version, ELECTRON_DTS);
+  public async uncache(ver: RunnableVersion) {
+    if (ver.source === VersionSource.remote) {
+      // Destructure ver so it's not a Proxy object, which can't be used
+      await window.ElectronFiddle.uncacheTypes({ ...ver });
+    }
   }
 
-  private clear() {
+  private async clear() {
     this.dispose();
-    this.unwatch();
+    await window.ElectronFiddle.unwatchElectronTypes();
   }
 
   private dispose() {
-    if (this.disposable) {
-      this.disposable.dispose();
-      delete this.disposable;
-    }
-  }
+    this.electronTypesDisposable?.dispose();
+    this.electronTypesDisposable = undefined;
 
-  private unwatch() {
-    if (this.watcher) {
-      this.watcher.close();
-      delete this.watcher;
+    for (const disposable of this.disposables) {
+      disposable.dispose();
     }
-  }
-
-  private static async ensureVersionIsCachedAt(version: string, file: string) {
-    if (fs.existsSync(file)) return;
-
-    const name = version.includes('nightly') ? 'electron-nightly' : 'electron';
-    const url = `https://unpkg.com/${name}@${version}/${ELECTRON_DTS}`;
-    try {
-      const response = await window.fetch(url);
-      const text = await response.text();
-      if (text.includes('Cannot find package')) throw new Error(text);
-      fs.outputFileSync(file, text);
-    } catch (err) {
-      console.warn(`Error saving "${url}" to "${file}": ${err}`);
-    }
+    this.disposables = [];
   }
 }

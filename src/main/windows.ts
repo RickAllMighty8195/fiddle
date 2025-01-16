@@ -1,17 +1,40 @@
-import { app, BrowserWindow, shell } from 'electron';
-import { IpcEvents } from '../ipc-events';
+import * as path from 'node:path';
+
+import { BrowserWindow, shell } from 'electron';
+
 import { createContextMenu } from './context-menu';
 import { ipcMainManager } from './ipc';
-import * as path from 'path';
+import { IpcEvents } from '../ipc-events';
 
 // Keep a global reference of the window objects, if we don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 export let browserWindows: Array<BrowserWindow | null> = [];
 
+// Global variables exposed by forge/webpack-plugin to reference
+// the entry point of preload and index.html over http://
+declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
+declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
+
+let mainIsReadyResolver: () => void;
+const mainIsReadyPromise = new Promise<void>(
+  (resolve) => (mainIsReadyResolver = resolve),
+);
+
+export function mainIsReady() {
+  mainIsReadyResolver();
+}
+
+export function safelyOpenWebURL(url: string) {
+  try {
+    const { protocol } = new URL(url);
+    if (['http:', 'https:'].includes(protocol)) {
+      shell.openExternal(url);
+    }
+  } catch {}
+}
+
 /**
  * Gets default options for the main window
- *
- * @returns {Electron.BrowserWindowConstructorOptions}
  */
 export function getMainWindowOptions(): Electron.BrowserWindowConstructorOptions {
   const HEADER_COMMANDS_HEIGHT = 50;
@@ -32,25 +55,25 @@ export function getMainWindowOptions(): Electron.BrowserWindowConstructorOptions
     backgroundColor: '#1d2427',
     show: false,
     webPreferences: {
-      webviewTag: false,
-      nodeIntegration: true,
-      contextIsolation: false,
-      preload: path.join(__dirname, '..', 'preload', 'preload'),
+      preload: !!process.env.JEST
+        ? path.join(process.cwd(), './.webpack/renderer/main_window/preload.js')
+        : MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     },
   };
 }
 
 /**
  * Creates a new main window.
- *
- * @export
- * @returns {Electron.BrowserWindow}
  */
 export function createMainWindow(): Electron.BrowserWindow {
   console.log(`Creating main window`);
   let browserWindow: BrowserWindow | null;
   browserWindow = new BrowserWindow(getMainWindowOptions());
-  browserWindow.loadFile('./dist/static/index.html');
+  browserWindow.loadURL(
+    !!process.env.JEST
+      ? path.join(process.cwd(), './.webpack/renderer/main_window/index.html')
+      : MAIN_WINDOW_WEBPACK_ENTRY,
+  );
 
   browserWindow.webContents.once('dom-ready', () => {
     if (browserWindow) {
@@ -73,39 +96,17 @@ export function createMainWindow(): Electron.BrowserWindow {
   });
 
   browserWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url);
+    safelyOpenWebURL(details.url);
     return { action: 'deny' };
   });
 
   browserWindow.webContents.on('will-navigate', (event, url) => {
     event.preventDefault();
-    shell.openExternal(url);
+    safelyOpenWebURL(url);
   });
 
   ipcMainManager.on(IpcEvents.RELOAD_WINDOW, () => {
     browserWindow?.reload();
-  });
-
-  ipcMainManager.on(IpcEvents.SHOW_INACTIVE, () => {
-    if (browserWindow) {
-      browserWindow.showInactive();
-    }
-  });
-
-  ipcMainManager.handle(IpcEvents.GET_APP_PATHS, () => {
-    const paths = {};
-    const pathsToQuery = [
-      'home',
-      'appData',
-      'userData',
-      'temp',
-      'downloads',
-      'desktop',
-    ];
-    for (const path of pathsToQuery) {
-      paths[path] = app.getPath(path as any);
-    }
-    return paths;
   });
 
   browserWindows.push(browserWindow);
@@ -115,10 +116,9 @@ export function createMainWindow(): Electron.BrowserWindow {
 
 /**
  * Gets or creates the main window, returning it in both cases.
- *
- * @returns {Electron.BrowserWindow}
  */
-export function getOrCreateMainWindow(): Electron.BrowserWindow {
+export async function getOrCreateMainWindow(): Promise<Electron.BrowserWindow> {
+  await mainIsReadyPromise;
   return (
     BrowserWindow.getFocusedWindow() || browserWindows[0] || createMainWindow()
   );
