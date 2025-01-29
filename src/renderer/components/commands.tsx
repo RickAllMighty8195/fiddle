@@ -1,15 +1,15 @@
-import { Button, ControlGroup } from '@blueprintjs/core';
-import { observer } from 'mobx-react';
 import * as React from 'react';
 
-import { AppState } from '../state';
+import { Button, ControlGroup } from '@blueprintjs/core';
+import classNames from 'classnames';
+import { observer } from 'mobx-react';
+
+import { GistActionButton } from './commands-action-button';
 import { AddressBar } from './commands-address-bar';
 import { BisectHandler } from './commands-bisect';
-import { GistActionButton } from './commands-action-button';
 import { Runner } from './commands-runner';
 import { VersionChooser } from './commands-version-chooser';
-import { ipcRendererManager } from '../ipc';
-import { IpcEvents } from '../../ipc-events';
+import { AppState } from '../state';
 
 interface CommandsProps {
   appState: AppState;
@@ -18,67 +18,68 @@ interface CommandsProps {
 /**
  * The command bar, containing all the buttons doing
  * all the things
- *
- * @class Commands
- * @extends {React.Component<CommandsProps>}
  */
-@observer
-export class Commands extends React.Component<CommandsProps> {
-  constructor(props: CommandsProps) {
-    super(props);
-  }
-
-  private handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target['tagName'] !== 'INPUT') {
-      ipcRendererManager.send(IpcEvents.CLICK_TITLEBAR_MAC);
+export const Commands = observer(
+  class Commands extends React.Component<CommandsProps> {
+    constructor(props: CommandsProps) {
+      super(props);
     }
-  };
 
-  public render() {
-    const { appState } = this.props;
-    const { isBisectCommandShowing, title } = appState;
+    private handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      // Only maximize if the toolbar itself is clicked (ignore for buttons, input, etc)
+      if (e.currentTarget === e.target) {
+        window.ElectronFiddle.macTitlebarClicked();
+      }
+    };
 
-    return (
-      <div
-        className={
-          process.platform === 'darwin' ? 'commands is-mac' : 'commands'
-        }
-        onDoubleClick={this.handleDoubleClick}
-      >
-        <div>
-          <ControlGroup fill={true} vertical={false}>
-            <Button
-              icon="cog"
-              title="Setting"
-              onClick={appState.toggleSettings}
-            />
-          </ControlGroup>
-          <ControlGroup fill={true} vertical={false}>
-            <VersionChooser appState={appState} />
-            <Runner appState={appState} />
-          </ControlGroup>
-          {isBisectCommandShowing && (
-            <ControlGroup fill={true} vertical={false}>
-              <BisectHandler appState={appState} />
-            </ControlGroup>
+    public render() {
+      const { appState } = this.props;
+      const { isBisectCommandShowing, title, isSettingsShowing } = appState;
+
+      return (
+        <div
+          className={classNames(
+            'commands',
+            { 'is-mac': window.ElectronFiddle.platform === 'darwin' },
+            { 'tabbing-hidden': isSettingsShowing },
           )}
-          <ControlGroup fill={true} vertical={false}>
-            <Button
-              active={appState.isConsoleShowing}
-              icon="console"
-              text="Console"
-              onClick={appState.toggleConsole}
-            />
-          </ControlGroup>
+          onDoubleClick={this.handleDoubleClick}
+        >
+          <div>
+            <ControlGroup fill={true} vertical={false}>
+              <Button
+                icon="cog"
+                title="Setting"
+                onClick={appState.toggleSettings}
+              />
+            </ControlGroup>
+            <ControlGroup fill={true} vertical={false}>
+              <VersionChooser appState={appState} />
+              <Runner appState={appState} />
+            </ControlGroup>
+            {isBisectCommandShowing && (
+              <ControlGroup fill={true} vertical={false}>
+                <BisectHandler appState={appState} />
+              </ControlGroup>
+            )}
+            <ControlGroup fill={true} vertical={false}>
+              <Button
+                active={appState.isConsoleShowing}
+                icon="console"
+                text="Console"
+                onClick={appState.toggleConsole}
+              />
+            </ControlGroup>
+          </div>
+          {window.ElectronFiddle.platform === 'darwin' ? (
+            <div className="title">{title}</div>
+          ) : undefined}
+          <div>
+            <AddressBar appState={appState} />
+            <GistActionButton appState={appState} />
+          </div>
         </div>
-        {process.platform === 'darwin' ? (
-          <div className="title">{title}</div>
-        ) : undefined}
-        <div>
-          <AddressBar appState={appState} />
-          <GistActionButton appState={appState} />
-        </div>
-      </div>
-    );
-  }
-}
+      );
+    }
+  },
+);

@@ -1,7 +1,7 @@
 import {
+  InstallState,
   RunnableVersion,
   VersionSource,
-  VersionState,
 } from '../../src/interfaces';
 
 export class VersionsMock {
@@ -13,11 +13,11 @@ export class VersionsMock {
 
     const arr = versions.map((version) => ({
       source: VersionSource.remote,
-      state: VersionState.ready,
+      state: InstallState.installed,
       version,
     }));
 
-    const obj = {};
+    const obj: Record<string, RunnableVersion> = {};
     for (const ver of arr) {
       obj[ver.version] = ver;
     }

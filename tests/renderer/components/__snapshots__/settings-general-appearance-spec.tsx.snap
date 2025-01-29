@@ -7,10 +7,10 @@ exports[`AppearanceSettings component renderItem() returns a MenuItem for matchi
   icon="media"
   multiline={false}
   onClick={[Function]}
-  popoverProps={Object {}}
+  popoverProps={{}}
   shouldDismissPopover={true}
   text={
-    Array [
+    [
       "foo",
     ]
   }
@@ -21,9 +21,9 @@ exports[`AppearanceSettings component renders 1`] = `
 <div
   className="settings-appearance"
 >
-  <h4>
+  <h3>
     Appearance
-  </h4>
+  </h3>
   <Blueprint3.Checkbox
     checked={true}
     label="Sync theme with system setting"
@@ -33,25 +33,26 @@ exports[`AppearanceSettings component renders 1`] = `
     disabled={true}
     inline={true}
     label="Choose your theme"
+    labelFor="open-theme-selector"
   >
     <Blueprint3.Select
       disabled={true}
       filterable={true}
       itemPredicate={[Function]}
       itemRenderer={[Function]}
-      items={Array []}
+      items={[]}
       noResults={
         <Blueprint3.MenuItem
           disabled={true}
           multiline={false}
-          popoverProps={Object {}}
+          popoverProps={{}}
           shouldDismissPopover={true}
           text="No results."
         />
       }
       onItemSelect={[Function]}
       popoverProps={
-        Object {
+        {
           "onClosed": [Function],
         }
       }

@@ -1,9 +1,10 @@
-import { ButtonGroup } from '@blueprintjs/core';
-import { observer } from 'mobx-react';
 import * as React from 'react';
 
-import { AppState } from '../state';
+import { ButtonGroup } from '@blueprintjs/core';
+import { observer } from 'mobx-react';
+
 import { VersionSelect } from './version-select';
+import { AppState } from '../state';
 
 interface VersionChooserProps {
   appState: AppState;
@@ -18,6 +19,7 @@ export const VersionChooser = observer((props: VersionChooserProps) => {
     Bisector,
     currentElectronVersion,
     isAutoBisecting,
+    isRunning,
     isSettingsShowing,
     setVersion,
   } = props.appState;
@@ -28,7 +30,9 @@ export const VersionChooser = observer((props: VersionChooserProps) => {
         appState={props.appState}
         onVersionSelect={({ version }) => setVersion(version)}
         currentVersion={currentElectronVersion}
-        disabled={!!Bisector || isAutoBisecting || isSettingsShowing}
+        disabled={
+          !!Bisector || isAutoBisecting || isSettingsShowing || isRunning
+        }
       />
     </ButtonGroup>
   );

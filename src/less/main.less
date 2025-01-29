@@ -1,3 +1,7 @@
+:root {
+  color-scheme: light dark;
+}
+
 body {
   padding: 0;
   margin: 0;
@@ -6,10 +10,6 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-
-  *:focus {
-    outline: none;
-  }
 }
 
 .fiddle {
@@ -31,8 +31,7 @@ body {
 
 #editors {
   display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
+  flex-flow: row nowrap;
   align-items: stretch;
   align-content: stretch;
   height: 100%;
@@ -61,9 +60,14 @@ body {
   height: 200px;
 }
 
+/* stylelint-disable-next-line selector-class-pattern */
 .editorTitle span {
   width: 33%;
   display: inline-block;
   text-align: center;
   font-size: 12px;
+}
+
+.tabbing-hidden {
+  visibility: hidden;
 }

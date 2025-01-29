@@ -1,11 +1,10 @@
-import * as MonacoType from 'monaco-editor';
+import * as monaco from 'monaco-editor';
+
 import { App } from './app';
-import { initSentry } from '../sentry';
+import { initSentry } from './sentry';
 
 initSentry();
 
-require('monaco-loader')().then((monaco: typeof MonacoType) => {
-  window.ElectronFiddle.monaco = monaco;
-  window.ElectronFiddle.app = new App();
-  window.ElectronFiddle.app.setup();
-});
+window.monaco = monaco;
+window.app = new App();
+window.app.setup();

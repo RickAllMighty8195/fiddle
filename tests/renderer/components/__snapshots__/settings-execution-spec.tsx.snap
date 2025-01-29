@@ -2,9 +2,9 @@
 
 exports[`ExecutionSettings component renders 1`] = `
 <div>
-  <h2>
+  <h1>
     Execution
-  </h2>
+  </h1>
   <Blueprint3.Callout>
     These advanced settings control how Electron Fiddle executes your fiddles.
   </Blueprint3.Callout>
@@ -41,7 +41,7 @@ exports[`ExecutionSettings component renders 1`] = `
          environment variables to true. See
          
         <a
-          href="https://www.electronjs.org/docs/api/environnment-variables"
+          href="https://www.electronjs.org/docs/api/environment-variables"
         >
           documentation
         </a>
@@ -73,6 +73,7 @@ exports[`ExecutionSettings component renders 1`] = `
       </p>
       <br />
       <Blueprint3.InputGroup
+        aria-label="Set user-provided flags"
         key="0"
         name="0"
         onChange={[Function]}
@@ -115,10 +116,11 @@ exports[`ExecutionSettings component renders 1`] = `
       </p>
       <br />
       <Blueprint3.InputGroup
+        aria-label="Set user-provided environment variables"
         key="0"
         name="0"
         onChange={[Function]}
-        placeholder="NODE_OPTIONS=\\"--no-warnings --max-old-space-size=2048\\""
+        placeholder="NODE_OPTIONS="--no-warnings --max-old-space-size=2048""
         rightElement={
           <Blueprint3.Button
             disabled={true}
@@ -142,7 +144,7 @@ exports[`ExecutionSettings component renders 1`] = `
     <Blueprint3.FormGroup>
       <span
         style={
-          Object {
+          {
             "marginRight": 4,
           }
         }
