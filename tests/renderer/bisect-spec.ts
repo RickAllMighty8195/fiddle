@@ -1,9 +1,9 @@
-import { VersionSource, VersionState } from '../../src/interfaces';
+import { InstallState, VersionSource } from '../../src/interfaces';
 import { Bisector } from '../../src/renderer/bisect';
 
 const generateVersionRange = (rangeLength: number) =>
   new Array(rangeLength).fill(0).map((_, i) => ({
-    state: VersionState.ready,
+    state: InstallState.installed,
     version: `${i + 1}.0.0`,
     source: VersionSource.local,
   }));
@@ -48,16 +48,20 @@ describe('bisect', () => {
       expect(bisector.revList.length).toBe(2);
       const responseGood = bisector.continue(true);
       expect(responseGood).toHaveLength(2);
-      expect(versions).toContain(responseGood[0]);
-      expect(versions).toContain(responseGood[1]);
+      if (Array.isArray(responseGood)) {
+        expect(versions).toContain(responseGood[0]);
+        expect(versions).toContain(responseGood[1]);
+      }
 
       bisector = new Bisector(versions);
 
       expect(bisector.revList.length).toBe(2);
       const responseBad = bisector.continue(false);
       expect(responseBad).toHaveLength(2);
-      expect(versions).toContain(responseBad[0]);
-      expect(versions).toContain(responseBad[1]);
+      if (Array.isArray(responseBad)) {
+        expect(versions).toContain(responseBad[0]);
+        expect(versions).toContain(responseBad[1]);
+      }
     });
   });
 

@@ -1,7 +1,9 @@
-import { shallow } from 'enzyme';
 import * as React from 'react';
 
+import { shallow } from 'enzyme';
+
 import { Settings } from '../../../src/renderer/components/settings';
+import { AppState } from '../../../src/renderer/state';
 
 jest.mock('../../../src/renderer/components/settings-general', () => ({
   GeneralSettings: 'settings-general',
@@ -16,12 +18,12 @@ jest.mock('../../../src/renderer/components/settings-credits', () => ({
 }));
 
 describe('Settings component', () => {
-  let store: any;
+  let store: AppState;
 
   beforeEach(() => {
     store = {
       isSettingsShowing: true,
-    };
+    } as AppState;
   });
 
   it('renders null if settings not showing', () => {
@@ -89,10 +91,37 @@ describe('Settings component', () => {
 
     // trigger mock 'keyup' event
     map.keyup({ code: 'Escape' });
-    expect(Object.keys(map)).toHaveLength(1);
+    expect(Object.keys(map)).toContain('keyup');
+    expect(Object.keys(map)).toHaveLength(2); // ['keyup','contextmenu']
     expect(store.isSettingsShowing).toBe(false);
 
-    // check if event listener is removed upon unmount
+    // check if the event listeners are removed upon unmount
+    wrapper.unmount();
+    expect(Object.keys(map)).toHaveLength(0);
+  });
+
+  it('makes sure the contextmenu is disabled', () => {
+    expect(store.isSettingsShowing).toBe(true);
+    // mock event listener API
+    const map: any = {};
+    window.addEventListener = jest.fn().mockImplementation((event, cb) => {
+      map[event] = cb;
+    });
+
+    window.removeEventListener = jest.fn().mockImplementation((event) => {
+      delete map[event];
+    });
+
+    const wrapper = shallow(<Settings appState={store} />);
+
+    // trigger mock 'contextmenu' event
+    const preventDefault = jest.fn();
+    map.contextmenu({ preventDefault });
+    expect(Object.keys(map)).toContain('contextmenu');
+    expect(Object.keys(map)).toHaveLength(2); // ['keyup','contextmenu']
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+
+    // check if the event listeners are removed upon unmount
     wrapper.unmount();
     expect(Object.keys(map)).toHaveLength(0);
   });
@@ -111,14 +140,14 @@ describe('Settings component', () => {
 
     // Set the theme selector showing to true
     const wrapper = shallow(<Settings appState={store} />);
-    const instance = wrapper.instance() as Settings;
+    const instance: any = wrapper.instance();
 
     // Toggle the state of the variable
     instance.toggleHasPopoverOpen();
 
     // trigger mock 'keyup' event
     map.keyup({ code: 'Escape' });
-    expect(Object.keys(map)).toHaveLength(1);
+    expect(Object.keys(map)).toHaveLength(2); // ['keyup','contextmenu']
     expect(store.isSettingsShowing).toBe(true);
 
     // Toggle the setting again as if it was closed
@@ -126,10 +155,10 @@ describe('Settings component', () => {
 
     // trigger mock 'keyup' event
     map.keyup({ code: 'Escape' });
-    expect(Object.keys(map)).toHaveLength(1);
+    expect(Object.keys(map)).toHaveLength(2); // ['keyup','contextmenu']
     expect(store.isSettingsShowing).toBe(false);
 
-    // check if event listener is removed upon unmount
+    // check if the event listeners are removed upon unmount
     wrapper.unmount();
     expect(Object.keys(map)).toHaveLength(0);
   });

@@ -1,9 +1,10 @@
-import { Callout, Card } from '@blueprintjs/core';
-import { shell } from 'electron';
-import * as fs from 'fs-extra';
-import * as path from 'path';
 import * as React from 'react';
 
+import { Callout, Card } from '@blueprintjs/core';
+
+import { Contributor } from 'src/interfaces';
+
+import contributorsJSON from '../../../static/contributors.json';
 import { AppState } from '../state';
 
 interface CreditsSettingsProps {
@@ -14,21 +15,8 @@ interface CreditsSettingsState {
   contributors: Array<Contributor>;
 }
 
-interface Contributor {
-  url: string;
-  api: string;
-  login: string;
-  avatar: string;
-  name: string;
-  bio: string;
-  location: string;
-}
-
 /**
  * Settings content to manage Credits-related preferences.
- *
- * @class CreditsSettings
- * @extends {React.Component<CreditsSettingsProps, CreditsSettingsState>}
  */
 export class CreditsSettings extends React.Component<
   CreditsSettingsProps,
@@ -38,16 +26,12 @@ export class CreditsSettings extends React.Component<
     super(props);
 
     this.state = {
-      contributors: [],
+      contributors: contributorsJSON as Array<Contributor>,
     };
-
-    this.getContributors();
   }
 
   /**
    * Renders a list of contributors of Electron Fiddle.
-   *
-   * @returns {Array<JSX.Element>}
    */
   public renderContributors(): Array<JSX.Element> {
     const { contributors } = this.state;
@@ -60,7 +44,7 @@ export class CreditsSettings extends React.Component<
       const style: React.CSSProperties = {
         backgroundImage: `url(${avatar})`,
       };
-      const onClick = () => shell.openExternal(url);
+      const onClick = () => window.open(url);
 
       return (
         <Card
@@ -71,7 +55,7 @@ export class CreditsSettings extends React.Component<
         >
           <div className="avatar" style={style} />
           <div className="details">
-            <h5 className="name">{name || login}</h5>
+            <h2 className="name">{name || login}</h2>
             {maybeLocation}
             {maybeBio}
           </div>
@@ -83,7 +67,7 @@ export class CreditsSettings extends React.Component<
   public render() {
     return (
       <div>
-        <h2>Credits</h2>
+        <h1>Credits</h1>
         <Callout>
           Electron Fiddle is, just like Electron, a free open source project
           welcoming contributors of all genders, cultures, and backgrounds. We
@@ -93,18 +77,5 @@ export class CreditsSettings extends React.Component<
         <div className="contributors">{this.renderContributors()}</div>
       </div>
     );
-  }
-
-  public async getContributors() {
-    try {
-      const contributorsFile = path.join(
-        __dirname,
-        '../../static/contributors.json',
-      );
-      const contributors = await fs.readJSON(contributorsFile);
-      this.setState({ contributors });
-    } catch (error) {
-      console.warn(`CreditsSettings: Fetching contributors failed`, error);
-    }
   }
 }

@@ -1,15 +1,9 @@
-import { execSync } from 'child_process';
-
 import { Files, PACKAGE_NAME } from '../../interfaces';
-import { getElectronBinaryPath } from '../binary';
-import { getForgeVersion } from '../../utils/get-package';
+import { getForgeVersion } from '../utils/get-package';
 
 /**
  * This transform turns the files into an electron-forge
  * project.
- *
- * @param {Files} files
- * @returns {Promise<Files>}
  */
 export async function forgeTransform(files: Files): Promise<Files> {
   if (files.get(PACKAGE_NAME)) {
@@ -44,13 +38,12 @@ export async function forgeTransform(files: Files): Promise<Files> {
       const nightlyVersion = devDependencies['electron-nightly'];
       if (nightlyVersion) {
         // Fetch forced ABI for nightly.
-        const binaryPath = getElectronBinaryPath(nightlyVersion);
-        const abi = execSync(
-          `ELECTRON_RUN_AS_NODE=1 "${binaryPath}" -p process.versions.modules`,
-        );
+        const { modules } = (await window.ElectronFiddle.getReleaseInfo(
+          nightlyVersion,
+        ))!;
 
         config.forge.electronRebuildConfig = {
-          forceABI: abi.toString().trim(),
+          forceABI: parseInt(modules.toString().trim()),
         };
       }
 

@@ -1,5 +1,7 @@
-import { observable } from 'mobx';
+import { makeObservable, observable } from 'mobx';
 
+import { BisectorMock } from './bisector';
+import { VersionsMock } from './electron-versions';
 import {
   BlockableAccelerator,
   ElectronReleaseChannel,
@@ -8,58 +10,58 @@ import {
   RunnableVersion,
 } from '../../src/interfaces';
 import { EditorMosaic } from '../../src/renderer/editor-mosaic';
-
-import { objectDifference } from '../utils';
-import { BisectorMock } from './bisector';
-import { VersionsMock } from './electron-versions';
 import { ELECTRON_MIRROR } from '../../src/renderer/mirror-constants';
+import { objectDifference } from '../utils';
 
 export class StateMock {
-  @observable public acceleratorsToBlock: BlockableAccelerator[] = [];
-  @observable public activeGistAction = GistActionState.none;
-  @observable public channelsToShow: ElectronReleaseChannel[] = [];
-  @observable public editorMosaic = new EditorMosaic();
-  @observable public environmentVariables: string[] = [];
-  @observable public executionFlags: string[] = [];
-  @observable public genericDialogLastInput: string | null = null;
-  @observable public genericDialogLastResult: boolean | null = null;
-  @observable public genericDialogOptions: GenericDialogOptions = {} as any;
-  @observable public gistId = '';
-  @observable public gitHubAvatarUrl: string | null = null;
-  @observable public gitHubLogin: string | null = null;
-  @observable public gitHubName: string | null = null;
-  @observable public gitHubPublishAsPublic = true;
-  @observable public gitHubToken: string | null = null;
-  @observable public isAddVersionDialogShowing = false;
-  @observable public isAutoBisecting = false;
-  @observable public isClearingConsoleOnRun = false;
-  @observable public isConfirmationPromptShowing = false;
-  @observable public isConsoleShowing = true;
-  @observable public isEnablingElectronLogging = false;
-  @observable public isGenericDialogShowing = false;
-  @observable public isInstallingModules = false;
-  @observable public isOnline = true;
-  @observable public isQuitting = false;
-  @observable public isRunning = false;
-  @observable public isSettingsShowing = false;
-  @observable public isTokenDialogShowing = false;
-  @observable public isTourShowing = false;
-  @observable public isUsingSystemTheme = true;
-  @observable public isWarningDialogShowing = false;
-  @observable public modules = new Map<string, string>();
-  @observable public output = [];
-  @observable public showObsoleteVersions = false;
-  @observable public showUndownloadedVersions = false;
-  @observable public theme: string | null;
-  @observable public title = 'Electron Fiddle';
-  @observable public version: string;
-  @observable public versions: Record<string, RunnableVersion>;
-  @observable public versionsToShow: RunnableVersion[] = [];
-  @observable public packageAuthor = 'electron<electron@electron.org>';
-  @observable public electronMirror = ELECTRON_MIRROR;
-  @observable public isBisectCommandShowing = false;
+  public acceleratorsToBlock: BlockableAccelerator[] = [];
+  public activeGistAction = GistActionState.none;
+  public channelsToShow: ElectronReleaseChannel[] = [];
+  public editorMosaic = new EditorMosaic();
+  public environmentVariables: string[] = [];
+  public executionFlags: string[] = [];
+  public genericDialogLastInput: string | null = null;
+  public genericDialogLastResult: boolean | null = null;
+  public genericDialogOptions = {} as GenericDialogOptions;
+  public gistId = '';
+  public gitHubAvatarUrl: string | null = null;
+  public gitHubLogin: string | null = null;
+  public gitHubName: string | null = null;
+  public gitHubPublishAsPublic = true;
+  public gitHubToken: string | null = null;
+  public isAddVersionDialogShowing = false;
+  public isAutoBisecting = false;
+  public isClearingConsoleOnRun = false;
+  public isConfirmationPromptShowing = false;
+  public isConsoleShowing = true;
+  public isEnablingElectronLogging = false;
+  public isGenericDialogShowing = false;
+  public isInstallingModules = false;
+  public isPublishingGistAsRevision = true;
+  public isOnline = true;
+  public isQuitting = false;
+  public isRunning = false;
+  public isSettingsShowing = false;
+  public isTokenDialogShowing = false;
+  public isTourShowing = false;
+  public isUsingSystemTheme = true;
+  public isWarningDialogShowing = false;
+  public modules = new Map<string, string>();
+  public output = [];
+  public showObsoleteVersions = false;
+  public showUndownloadedVersions = false;
+  public theme: string | null = null;
+  public title = 'Electron Fiddle';
+  public version: string | null = null;
+  public versions: Record<string, RunnableVersion> = {};
+  public versionsToShow: RunnableVersion[] = [];
+  public packageAuthor = 'electron<electron@electron.org>';
+  public electronMirror = ELECTRON_MIRROR;
+  public isBisectCommandShowing = false;
+  public isDownloadingAll = false;
+  public isDeletingAll = false;
 
-  public Bisector = new BisectorMock();
+  public Bisector: BisectorMock | undefined = new BisectorMock();
   public addAcceleratorToBlock = jest.fn();
   public addLocalVersion = jest.fn();
   public addNewVersions = jest.fn();
@@ -90,6 +92,12 @@ export class StateMock {
     const { mockVersionsArray } = new VersionsMock();
     return { ver: this.versions[mockVersionsArray[0].version] };
   });
+  public startDownloadingAll = jest.fn().mockImplementation(() => {
+    this.isDownloadingAll = true;
+  });
+  public stopDownloadingAll = jest.fn().mockImplementation(() => {
+    this.isDownloadingAll = false;
+  });
   public showChannels = jest.fn();
   public showConfirmDialog = jest.fn();
   public showErrorDialog = jest.fn();
@@ -97,12 +105,64 @@ export class StateMock {
   public showInfoDialog = jest.fn();
   public showInputDialog = jest.fn();
   public signOutGitHub = jest.fn();
+  public toggleAddMonacoThemeDialog = jest.fn();
   public toggleAddVersionDialog = jest.fn();
   public toggleAuthDialog = jest.fn();
   public toggleSettings = jest.fn();
   public updateElectronVersions = jest.fn();
+  public startDeletingAll = jest.fn();
+  public stopDeletingAll = jest.fn();
 
   constructor() {
+    makeObservable(this, {
+      acceleratorsToBlock: observable,
+      activeGistAction: observable,
+      channelsToShow: observable,
+      editorMosaic: observable,
+      environmentVariables: observable,
+      executionFlags: observable,
+      genericDialogLastInput: observable,
+      genericDialogLastResult: observable,
+      genericDialogOptions: observable,
+      gistId: observable,
+      gitHubAvatarUrl: observable,
+      gitHubLogin: observable,
+      gitHubName: observable,
+      gitHubPublishAsPublic: observable,
+      gitHubToken: observable,
+      isAddVersionDialogShowing: observable,
+      isAutoBisecting: observable,
+      isClearingConsoleOnRun: observable,
+      isConfirmationPromptShowing: observable,
+      isConsoleShowing: observable,
+      isEnablingElectronLogging: observable,
+      isGenericDialogShowing: observable,
+      isInstallingModules: observable,
+      isOnline: observable,
+      isPublishingGistAsRevision: observable,
+      isQuitting: observable,
+      isRunning: observable,
+      isSettingsShowing: observable,
+      isTokenDialogShowing: observable,
+      isTourShowing: observable,
+      isUsingSystemTheme: observable,
+      isWarningDialogShowing: observable,
+      modules: observable,
+      output: observable,
+      showObsoleteVersions: observable,
+      showUndownloadedVersions: observable,
+      theme: observable,
+      title: observable,
+      version: observable,
+      versions: observable,
+      versionsToShow: observable,
+      packageAuthor: observable,
+      electronMirror: observable,
+      isBisectCommandShowing: observable,
+      isDeletingAll: observable,
+      isDownloadingAll: observable,
+    });
+
     const { mockVersions: obj, mockVersionsArray: arr } = new VersionsMock();
     this.versions = obj;
     this.currentElectronVersion = arr[arr.length - 1];
@@ -130,11 +190,13 @@ export class StateMock {
       [ver.version, ver.source, ver.state].join(' ');
     for (const [key, val] of Object.entries(o)) {
       if (key == 'currentElectronVersion') {
-        o[key] = terserRunnable(val) as any;
+        o[key] = terserRunnable(val as RunnableVersion);
       } else if (key === 'versions') {
-        o[key] = Object.values(val).map(terserRunnable) as any;
+        o[key] = Object.values(val as Record<string, RunnableVersion>).map(
+          terserRunnable,
+        );
       } else if (key === 'versionsToShow') {
-        o[key] = val.map(terserRunnable);
+        o[key] = (val as Array<RunnableVersion>).map(terserRunnable);
       }
     }
 

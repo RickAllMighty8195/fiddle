@@ -1,6 +1,6 @@
 import { getGistId, idFromUrl, urlFromId } from '../../src/utils/gist';
 
-jest.mock('os', () => ({
+jest.mock('node:os', () => ({
   userInfo: () => ({
     username: 'test-user',
   }),
@@ -81,6 +81,11 @@ describe('gist', () => {
       const input = `https://gist.github.com/${expected}/`;
       const actual = getGistId(input);
       expect(actual).toBe(expected);
+    });
+
+    it('should return null when gist id incorrect', () => {
+      const actual = getGistId('xx');
+      expect(actual).toBe(null);
     });
   });
 });
