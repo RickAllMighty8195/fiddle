@@ -40,7 +40,7 @@
     "@blueprintjs/popover2": "^0.12.2",
     "@blueprintjs/select": "^3.15.0",
     "@electron/get": "^1.14.1",
-    "@octokit/rest": "^16.43.1",
+    "@octokit/rest": "^21.1.1",
     "@sentry/electron": "^2.5.3",
     "@types/getos": "^3.0.1",
     "algoliasearch": "^4.12.0",
